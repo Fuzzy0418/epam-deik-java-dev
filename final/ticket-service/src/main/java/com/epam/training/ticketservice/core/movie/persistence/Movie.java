@@ -1,5 +1,6 @@
 package com.epam.training.ticketservice.core.movie.persistence;
 
+import com.epam.training.ticketservice.core.movie.model.MovieDto;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -28,5 +29,15 @@ public class Movie {
         this.name = name;
         this.genre = genre;
         this.length = length;
+    }
+
+    public MovieDto toMovieDto() {
+        MovieDto movieDto = new MovieDto.Builder()
+                .withName(this.name)
+                .withGenre(this.genre)
+                .withLength(this.length)
+                .build();
+
+        return movieDto;
     }
 }

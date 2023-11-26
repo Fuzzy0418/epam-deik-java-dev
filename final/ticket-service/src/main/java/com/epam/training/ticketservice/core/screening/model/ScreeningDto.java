@@ -5,6 +5,7 @@ import com.epam.training.ticketservice.core.room.persistence.Room;
 import lombok.Value;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Value
 public class ScreeningDto {
@@ -46,6 +47,7 @@ public class ScreeningDto {
 
     @Override
     public String toString() {
-        return movie.toString() + ", screened in room" + room.getName() + ", at";
+        return movie.toMovieDto().toString() + ", screened in room " + room.getName() + ", at "
+                + startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
     }
 }

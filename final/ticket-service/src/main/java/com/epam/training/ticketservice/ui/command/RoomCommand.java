@@ -1,5 +1,6 @@
 package com.epam.training.ticketservice.ui.command;
 
+import com.epam.training.ticketservice.core.movie.model.MovieDto;
 import com.epam.training.ticketservice.core.room.RoomService;
 import com.epam.training.ticketservice.core.room.model.RoomDto;
 import com.epam.training.ticketservice.core.user.UserService;
@@ -13,6 +14,7 @@ import org.springframework.shell.standard.ShellMethodAvailability;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @ShellComponent
 @RequiredArgsConstructor
@@ -28,7 +30,10 @@ public class RoomCommand {
         if (roomList.isEmpty()) {
             return "There are no rooms at the moment";
         } else {
-            return roomList.toString();
+            String roomsAsString = roomList.stream()
+                    .map(RoomDto::toString)
+                    .collect(Collectors.joining("\n"));
+            return roomsAsString;
         }
     }
 

@@ -10,8 +10,8 @@ public interface ScreeningService {
 
     List<ScreeningDto> listScreenings();
 
-    Screening createScreening(String movieName, String roomName, LocalDateTime startTime);
+    String createScreening(String movieName, String roomName, LocalDateTime startTime);
 
-    void deleteScreening(ScreeningDto screeningDto);
+    String deleteScreening(String movieName, String roomName, LocalDateTime startTime);
 
 }

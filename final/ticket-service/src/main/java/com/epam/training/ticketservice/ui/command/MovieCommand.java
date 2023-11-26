@@ -2,6 +2,7 @@ package com.epam.training.ticketservice.ui.command;
 
 import com.epam.training.ticketservice.core.movie.MovieService;
 import com.epam.training.ticketservice.core.movie.model.MovieDto;
+import com.epam.training.ticketservice.core.movie.persistence.Movie;
 import com.epam.training.ticketservice.core.user.UserService;
 import com.epam.training.ticketservice.core.user.model.UserDto;
 import com.epam.training.ticketservice.core.user.persistance.User;
@@ -13,6 +14,7 @@ import org.springframework.shell.standard.ShellMethodAvailability;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @ShellComponent
 @RequiredArgsConstructor
@@ -28,7 +30,10 @@ public class MovieCommand {
         if (movieList.isEmpty()) {
             return "There are no movies at the moment";
         } else {
-            return movieList.toString();
+            String moviesAsString = movieList.stream()
+                    .map(MovieDto::toString)
+                    .collect(Collectors.joining("\n"));
+            return moviesAsString;
         }
     }
 

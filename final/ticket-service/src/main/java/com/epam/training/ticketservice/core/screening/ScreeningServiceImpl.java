@@ -31,7 +31,7 @@ public class ScreeningServiceImpl implements ScreeningService {
     }
 
     @Override
-    public Screening createScreening(String movieName, String roomName, LocalDateTime startTime) {
+    public String createScreening(String movieName, String roomName, LocalDateTime startTime) {
         Optional<Movie> movie = movieRepository.findByName(movieName);
         Optional<Room> room = roomRepository.findByName(roomName);
         Optional<Screening> roomScreeningList = screeningRepository.findScreeningByRoom(room.get());
@@ -46,45 +46,56 @@ public class ScreeningServiceImpl implements ScreeningService {
         LocalDateTime newScreeningEnd = newScreeningStart.plusMinutes(newScreening.getMovie().getLength());
         LocalDateTime newScreeningEndPlusBreakTime = newScreeningEnd.plusMinutes(10);
 
-        boolean canScreening = true;
-
-        /*for (Screening screening : roomScreeningList.stream().toList()) {
+        for (Screening screening : roomScreeningList.stream().toList()) {
             LocalDateTime screeningStart = screening.getStartTime();
             LocalDateTime screeningEnd = screeningStart.plusMinutes(screening.getMovie().getLength());
             LocalDateTime screeningEndPlusBreakTime = screeningEnd.plusMinutes(10);
 
             //Kezdeti időpont bármelyik más adás start-end közé esik
-            if (newScreeningStart.isAfter(screeningStart) && newScreeningStart.isBefore(screeningEnd)) {
-                canScreening = false;
+            if (newScreeningStart.isAfter(screeningStart)
+                    && newScreeningStart.isBefore(screeningEnd)) {
+                return "There is an overlapping screening";
             //Befejező időpontja bármelyik másik adás startjától nagyobb
-            } else if (newScreeningEnd.isAfter(screeningStart)) {
-                canScreening = false;
+            } else if (newScreeningEnd.isAfter(screeningStart)
+                    && newScreeningEnd.isBefore(screeningEnd)) {
+                return "There is an overlapping screening";
             //Befejező időpontja + 10 perces szünetidő bármelyik adás startjától nagyobb
-            } else if (newScreeningEndPlusBreakTime.isAfter(screeningStart)) {
-                canScreening = false;
+            } else if (newScreeningStart.isAfter(screeningEnd)
+                    && newScreeningStart.isBefore(screeningEndPlusBreakTime)) {
+                return "This would start in the break period after another screening in this room";
             //Bele esik egy másik adás utáni 10 perces szünetbe. (Kezdeti dátuma bármelyik adás breakPeriodtól kisebb)
-            } else if (newScreeningStart.isBefore(screeningEndPlusBreakTime)) {
-                canScreening = false;
+            } else if (newScreeningEnd.isBefore(screeningStart)
+                    && newScreeningEndPlusBreakTime.isAfter(screeningStart)) {
+                return "This would start in the break period after another screening in this room";
             }
-        }*/
-
-        if (roomScreeningList.isEmpty() || !canScreening) {
-            screeningRepository.save(newScreening);
         }
 
-        return newScreening;
+        screeningRepository.save(newScreening);
+        return null;
 
     }
 
     @Override
-    public void deleteScreening(ScreeningDto screeningDto) {
+    public String deleteScreening(String movieName, String roomName, LocalDateTime startTime) {
+        Optional<Movie> movie = movieRepository.findByName(movieName);
+        Optional<Room> room = roomRepository.findByName(roomName);
 
+        Optional<Screening> screening = screeningRepository
+                .findScreeningByMovieAndRoomAndStartTime(movie.get(), room.get(), startTime);
+
+        if (screening.isEmpty()) {
+            return "The given screening does not exists";
+        }
+
+        screeningRepository.delete(screening.get());
+        return null;
     }
 
     private ScreeningDto mapEntityToDto(Screening screening) {
         return ScreeningDto.builder()
                 .withMovie(screening.getMovie())
                 .withRoom(screening.getRoom())
+                .withStartTime(screening.getStartTime())
                 .build();
     }
 

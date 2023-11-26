@@ -3,6 +3,7 @@ package com.epam.training.ticketservice.ui.command;
 import com.epam.training.ticketservice.core.movie.MovieService;
 import com.epam.training.ticketservice.core.movie.model.MovieDto;
 import com.epam.training.ticketservice.core.movie.persistence.Movie;
+import com.epam.training.ticketservice.core.room.model.RoomDto;
 import com.epam.training.ticketservice.core.room.persistence.Room;
 import com.epam.training.ticketservice.core.screening.ScreeningService;
 import com.epam.training.ticketservice.core.screening.model.ScreeningDto;
@@ -19,7 +20,9 @@ import org.springframework.shell.standard.ShellMethodAvailability;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @ShellComponent
 @RequiredArgsConstructor
@@ -31,21 +34,26 @@ public class ScreeningCommand {
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
+    @ShellMethod(key = "list screenings", value = "List the available screenings")
+    public String listScreenings() {
+        List<ScreeningDto> screeningList = screeningService.listScreenings();
+
+        if (screeningList.isEmpty()) {
+            return "There are no screenings";
+        } else {
+            String screeningsAsString = screeningList.stream()
+                    .map(ScreeningDto::toString)
+                    .collect(Collectors.joining("\n"));
+            return screeningsAsString;
+        }
+    }
+
     @ShellMethodAvailability("isAdmin")
     @ShellMethod(key = "create screening", value = "Create a new screening")
     public String createScreening(String movieName, String roomName, String startTime) {
-        Screening screening = screeningService.createScreening(movieName, roomName,
+        String screening = screeningService.createScreening(movieName, roomName,
                 LocalDateTime.parse(startTime, formatter));
-        return screening.toString();
-
-        /*ScreeningDto screeningDto = ScreeningDto.builder()
-                .withMovie(movieName)
-                .withRoom(roomName)
-                .withStartTime(startTime)
-                .build();
-
-        screeningService.createScreening(screeningDto);
-        return screeningDto;*/
+        return screening;
     }
 
     /*@ShellMethodAvailability("isAdmin")

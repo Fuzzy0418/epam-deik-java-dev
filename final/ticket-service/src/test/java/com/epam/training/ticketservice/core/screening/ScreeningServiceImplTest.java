@@ -31,11 +31,11 @@ public class ScreeningServiceImplTest {
             new Room("Room1", 10, 10),
             LocalDateTime.parse("2023-11-24 10:40", formatter)
     );
-    private static final ScreeningDto DTO = new ScreeningDto.Builder()
-            .withMovie(new Movie("Film1", "drama", 300))
-            .withRoom(new Room("Room1", 10, 10))
-            .withStartTime(LocalDateTime.parse("2023-11-24 10:40", formatter))
-            .build();
+    private static final Screening ENTITY_2 = new Screening(
+            new Movie("Film2", "animation", 300),
+            new Room("Room1", 10, 10),
+            LocalDateTime.parse("2023-11-24 11:10", formatter)
+    );
 
     private final ScreeningRepository screeningRepository = mock(ScreeningRepository.class);
     private final MovieRepository movieRepository = mock(MovieRepository.class);
@@ -51,6 +51,56 @@ public class ScreeningServiceImplTest {
         underTest.createScreening(ENTITY.getMovie().getName(), ENTITY.getRoom().getName(), ENTITY.getStartTime());
 
         verify(screeningRepository).save(any(Screening.class));
+    }
+
+    @Test
+    void testCreateScreeningShouldNotSaveScreeningWhenScreeningIsExists() {
+        when(movieRepository.findByName(ENTITY.getMovie().getName())).thenReturn(Optional.of(ENTITY.getMovie()));
+        when(roomRepository.findByName(ENTITY.getRoom().getName())).thenReturn(Optional.of(ENTITY.getRoom()));
+        when(screeningRepository.findScreeningByMovieAndRoomAndStartTime(ENTITY.getMovie(), ENTITY.getRoom(), ENTITY.getStartTime())).thenReturn(Optional.of(ENTITY));
+        List<ScreeningDto> expected = underTest.listScreenings();
+
+        underTest.createScreening(ENTITY.getMovie().getName(), ENTITY.getRoom().getName(), ENTITY.getStartTime());
+        List<ScreeningDto> actual = underTest.listScreenings();
+
+        verify(screeningRepository).save(any(Screening.class));
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void testCreateScreeningShouldNotSaveScreeningWhenScreeningCoverAnotherScreening() {
+        when(movieRepository.findByName(ENTITY_2.getMovie().getName())).thenReturn(Optional.of(ENTITY_2.getMovie()));
+        when(roomRepository.findByName(ENTITY_2.getRoom().getName())).thenReturn(Optional.of(ENTITY_2.getRoom()));
+        when(screeningRepository.findScreeningByMovieAndRoomAndStartTime(ENTITY.getMovie(), ENTITY.getRoom(), ENTITY.getStartTime())).thenReturn(Optional.of(ENTITY));
+        List<ScreeningDto> expected = underTest.listScreenings();
+
+        underTest.createScreening(ENTITY_2.getMovie().getName(), ENTITY_2.getRoom().getName(), ENTITY_2.getStartTime());
+        List<ScreeningDto> actual = underTest.listScreenings();
+
+        verify(screeningRepository).save(any(Screening.class));
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void testDeleteScreeningShouldDeleteWhenScreeningIsExists() {
+        when(movieRepository.findByName(ENTITY.getMovie().getName())).thenReturn(Optional.of(ENTITY.getMovie()));
+        when(roomRepository.findByName(ENTITY.getRoom().getName())).thenReturn(Optional.of(ENTITY.getRoom()));
+        when(screeningRepository.findScreeningByMovieAndRoomAndStartTime(ENTITY.getMovie(), ENTITY.getRoom(), ENTITY.getStartTime())).thenReturn(Optional.of(ENTITY));
+
+        underTest.deleteScreening(ENTITY.getMovie().getName(), ENTITY.getRoom().getName(), ENTITY.getStartTime());
+
+        verify(screeningRepository).delete(any(Screening.class));
+    }
+
+    @Test
+    void testDeleteScreeningShouldNotDeleteWhenScreeningIsNotExists() {
+        when(movieRepository.findByName(ENTITY.getMovie().getName())).thenReturn(Optional.of(ENTITY.getMovie()));
+        when(roomRepository.findByName(ENTITY.getRoom().getName())).thenReturn(Optional.of(ENTITY.getRoom()));
+        when(screeningRepository.findScreeningByMovieAndRoomAndStartTime(ENTITY.getMovie(), ENTITY.getRoom(), ENTITY.getStartTime())).thenReturn(Optional.empty());
+
+        underTest.deleteScreening(ENTITY.getMovie().getName(), ENTITY.getRoom().getName(), ENTITY.getStartTime());
+
+        verify(screeningRepository, never()).delete(any(Screening.class));
     }
 
     @Test
