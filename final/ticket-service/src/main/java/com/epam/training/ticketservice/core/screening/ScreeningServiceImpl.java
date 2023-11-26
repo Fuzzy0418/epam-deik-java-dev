@@ -34,7 +34,6 @@ public class ScreeningServiceImpl implements ScreeningService {
     public String createScreening(String movieName, String roomName, LocalDateTime startTime) {
         Optional<Movie> movie = movieRepository.findByName(movieName);
         Optional<Room> room = roomRepository.findByName(roomName);
-        Optional<Screening> roomScreeningList = screeningRepository.findScreeningByRoom(room.get());
 
         Screening newScreening = new Screening(
             movie.get(),
@@ -42,37 +41,15 @@ public class ScreeningServiceImpl implements ScreeningService {
             startTime
         );
 
-        LocalDateTime newScreeningStart = newScreening.getStartTime();
-        LocalDateTime newScreeningEnd = newScreeningStart.plusMinutes(newScreening.getMovie().getLength());
-        LocalDateTime newScreeningEndPlusBreakTime = newScreeningEnd.plusMinutes(10);
+        String result = canCreateScreening(newScreening);
 
-        for (Screening screening : roomScreeningList.stream().toList()) {
-            LocalDateTime screeningStart = screening.getStartTime();
-            LocalDateTime screeningEnd = screeningStart.plusMinutes(screening.getMovie().getLength());
-            LocalDateTime screeningEndPlusBreakTime = screeningEnd.plusMinutes(10);
-
-            //Kezdeti időpont bármelyik más adás start-end közé esik
-            if (newScreeningStart.isAfter(screeningStart)
-                    && newScreeningStart.isBefore(screeningEnd)) {
-                return "There is an overlapping screening";
-            //Befejező időpontja bármelyik másik adás startjától nagyobb
-            } else if (newScreeningEnd.isAfter(screeningStart)
-                    && newScreeningEnd.isBefore(screeningEnd)) {
-                return "There is an overlapping screening";
-            //Befejező időpontja + 10 perces szünetidő bármelyik adás startjától nagyobb
-            } else if (newScreeningStart.isAfter(screeningEnd)
-                    && newScreeningStart.isBefore(screeningEndPlusBreakTime)) {
-                return "This would start in the break period after another screening in this room";
-            //Bele esik egy másik adás utáni 10 perces szünetbe. (Kezdeti dátuma bármelyik adás breakPeriodtól kisebb)
-            } else if (newScreeningEnd.isBefore(screeningStart)
-                    && newScreeningEndPlusBreakTime.isAfter(screeningStart)) {
-                return "This would start in the break period after another screening in this room";
-            }
+        if (result == "can") {
+            screeningRepository.save(newScreening);
+        } else {
+            return result;
         }
 
-        screeningRepository.save(newScreening);
         return null;
-
     }
 
     @Override
@@ -89,6 +66,41 @@ public class ScreeningServiceImpl implements ScreeningService {
 
         screeningRepository.delete(screening.get());
         return null;
+    }
+
+    private String canCreateScreening(Screening newScreening) {
+        Optional<Screening> roomScreeningList = screeningRepository.findScreeningByRoom(newScreening.getRoom());
+
+        LocalDateTime newScreeningStart = newScreening.getStartTime();
+        LocalDateTime newScreeningEnd = newScreeningStart.plusMinutes(newScreening.getMovie().getLength());
+        LocalDateTime newScreeningEndPlusBreakTime = newScreeningEnd.plusMinutes(10);
+
+        for (Screening screening : roomScreeningList.stream().toList()) {
+            LocalDateTime screeningStart = screening.getStartTime();
+            LocalDateTime screeningEnd = screeningStart.plusMinutes(screening.getMovie().getLength());
+            LocalDateTime screeningEndPlusBreakTime = screeningEnd.plusMinutes(10);
+
+            //Kezdeti időpont bármelyik más adás start-end közé esik
+            if (newScreeningStart.isAfter(screeningStart)
+                    && newScreeningStart.isBefore(screeningEnd)) {
+                return "There is an overlapping screening";
+                //Befejező időpontja bármelyik másik adás startjától nagyobb
+            } else if (newScreeningEnd.isAfter(screeningStart)
+                    && newScreeningEnd.isBefore(screeningEnd)) {
+                return "There is an overlapping screening";
+                //Befejező időpontja + 10 perces szünetidő bármelyik adás startjától nagyobb
+            } else if (newScreeningStart.isAfter(screeningEnd)
+                    && newScreeningStart.isBefore(screeningEndPlusBreakTime)) {
+                return "This would start in the break period after another screening in this room";
+                //Bele esik egy másik adás utáni 10 perces szünetbe. (Kezdeti dátuma bármelyik adás
+                // breakPeriodtól kisebb)
+            } else if (newScreeningEnd.isBefore(screeningStart)
+                    && newScreeningEndPlusBreakTime.isAfter(screeningStart)) {
+                return "This would start in the break period after another screening in this room";
+            }
+        }
+
+        return "can";
     }
 
     private ScreeningDto mapEntityToDto(Screening screening) {
