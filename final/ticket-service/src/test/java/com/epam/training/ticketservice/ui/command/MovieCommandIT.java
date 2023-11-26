@@ -9,6 +9,8 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.shell.Shell;
 import org.springframework.test.context.ActiveProfiles;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -33,5 +35,23 @@ public class MovieCommandIT {
         shell.evaluate(() -> "create movie Film1 drama 300");
 
         verify(movieService, times(0)).createMovie(MOVIE_DTO);
+    }
+
+    @Test
+    void testCreateMovieCommandShoulSaveTheMovieWhenUserIsLoggedAsAdmin() {
+        shell.evaluate(() -> "sign in privileged admin admin");
+        shell.evaluate(() -> "create movie Film1 drama 300");
+
+        verify(movieService).createMovie(MOVIE_DTO);
+        assertTrue(movieService.getMovieList().contains(MOVIE_DTO));
+    }
+
+    @Test
+    void testListMovieShouldReturnListWhenListIsNotEmpty() {
+        shell.evaluate(() -> "sign in privileged admin admin");
+        shell.evaluate(() -> "create movie Film1 drama 500");
+        shell.evaluate(() -> "list movies");
+
+        assertEquals(1, movieService.getMovieList().size());
     }
 }

@@ -34,7 +34,17 @@ public class ScreeningServiceImplTest {
     private static final Screening ENTITY_2 = new Screening(
             new Movie("Film2", "animation", 300),
             new Room("Room1", 10, 10),
-            LocalDateTime.parse("2023-11-24 11:10", formatter)
+            LocalDateTime.parse("2023-11-24 10:45", formatter)
+    );
+    private static final Screening ENTITY_3 = new Screening(
+            new Movie("Film3", "sci-fi", 300),
+            new Room("Room1", 10, 10),
+            LocalDateTime.parse("2023-11-24 15:45", formatter)
+    );
+    private static final Screening ENTITY_4 = new Screening(
+            new Movie("Film4", "sci-fi", 300),
+            new Room("Room1", 10, 10),
+            LocalDateTime.parse("2023-11-24 14:40", formatter)
     );
 
     private final ScreeningRepository screeningRepository = mock(ScreeningRepository.class);
@@ -58,27 +68,39 @@ public class ScreeningServiceImplTest {
         when(movieRepository.findByName(ENTITY.getMovie().getName())).thenReturn(Optional.of(ENTITY.getMovie()));
         when(roomRepository.findByName(ENTITY.getRoom().getName())).thenReturn(Optional.of(ENTITY.getRoom()));
         when(screeningRepository.findScreeningByMovieAndRoomAndStartTime(ENTITY.getMovie(), ENTITY.getRoom(), ENTITY.getStartTime())).thenReturn(Optional.of(ENTITY));
-        List<ScreeningDto> expected = underTest.listScreenings();
 
         underTest.createScreening(ENTITY.getMovie().getName(), ENTITY.getRoom().getName(), ENTITY.getStartTime());
-        List<ScreeningDto> actual = underTest.listScreenings();
 
         verify(screeningRepository).save(any(Screening.class));
-        assertEquals(expected, actual);
     }
 
     @Test
     void testCreateScreeningShouldNotSaveScreeningWhenScreeningCoverAnotherScreening() {
         when(movieRepository.findByName(ENTITY_2.getMovie().getName())).thenReturn(Optional.of(ENTITY_2.getMovie()));
         when(roomRepository.findByName(ENTITY_2.getRoom().getName())).thenReturn(Optional.of(ENTITY_2.getRoom()));
-        when(screeningRepository.findScreeningByMovieAndRoomAndStartTime(ENTITY.getMovie(), ENTITY.getRoom(), ENTITY.getStartTime())).thenReturn(Optional.of(ENTITY));
-        List<ScreeningDto> expected = underTest.listScreenings();
+        when(movieRepository.findByName(ENTITY_4.getMovie().getName())).thenReturn(Optional.of(ENTITY_4.getMovie()));
+        when(roomRepository.findByName(ENTITY_4.getRoom().getName())).thenReturn(Optional.of(ENTITY_4.getRoom()));
+        when(screeningRepository.findScreeningByRoom(ENTITY_2.getRoom())).thenReturn(Optional.of(ENTITY));
 
-        underTest.createScreening(ENTITY_2.getMovie().getName(), ENTITY_2.getRoom().getName(), ENTITY_2.getStartTime());
-        List<ScreeningDto> actual = underTest.listScreenings();
+        String result = underTest.createScreening(ENTITY_2.getMovie().getName(), ENTITY_2.getRoom().getName(), ENTITY_2.getStartTime());
+        String result_2 = underTest.createScreening(ENTITY_4.getMovie().getName(), ENTITY_4.getRoom().getName(), ENTITY_4.getStartTime());
 
-        verify(screeningRepository).save(any(Screening.class));
-        assertEquals(expected, actual);
+
+        verify(screeningRepository, never()).save(any(Screening.class));
+        assertEquals(result, "There is an overlapping screening");
+        assertEquals(result_2, "There is an overlapping screening");
+    }
+
+    @Test
+    void testCreateScreeningShouldNotSaveScreeningWhenScreeningOverlapsBreakTimeanotherScreening() {
+        when(movieRepository.findByName(ENTITY_3.getMovie().getName())).thenReturn(Optional.of(ENTITY_3.getMovie()));
+        when(roomRepository.findByName(ENTITY_3.getRoom().getName())).thenReturn(Optional.of(ENTITY_3.getRoom()));
+        when(screeningRepository.findScreeningByRoom(ENTITY_3.getRoom())).thenReturn(Optional.of(ENTITY));
+
+        String result = underTest.createScreening(ENTITY_3.getMovie().getName(), ENTITY_3.getRoom().getName(), ENTITY_3.getStartTime());
+
+        verify(screeningRepository, never()).save(any(Screening.class));
+        assertEquals(result, "This would start in the break period after another screening in this room");
     }
 
     @Test

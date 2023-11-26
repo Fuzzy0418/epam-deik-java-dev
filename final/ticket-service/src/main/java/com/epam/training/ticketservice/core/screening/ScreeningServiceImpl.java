@@ -81,8 +81,9 @@ public class ScreeningServiceImpl implements ScreeningService {
             LocalDateTime screeningEndPlusBreakTime = screeningEnd.plusMinutes(10);
 
             //Kezdeti időpont bármelyik más adás start-end közé esik
-            if (newScreeningStart.isAfter(screeningStart)
-                    && newScreeningStart.isBefore(screeningEnd)) {
+            if ((newScreeningStart.isAfter(screeningStart)
+                    && newScreeningStart.isBefore(screeningEnd))
+                    || newScreeningStart.isAfter(screeningStart) && newScreeningEnd.isBefore(screeningEnd)) {
                 return "There is an overlapping screening";
                 //Befejező időpontja bármelyik másik adás startjától nagyobb
             } else if (newScreeningEnd.isAfter(screeningStart)
